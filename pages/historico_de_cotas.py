@@ -19,6 +19,7 @@ def carregar_dados(tabela):
         df = pd.DataFrame(response.data)
         df['data_referencia'] = pd.to_datetime(df['data_referencia'])
         df = df.sort_values('data_referencia')
+        df['data_referencia'] = pd.to_datetime(df['data_referencia'], errors='coerce')
         return df
     except Exception as e:
         st.error(f"Erro ao buscar dados: {e}")
@@ -125,13 +126,13 @@ df_ult_2 = df_filtrado_2[df_filtrado_2['data_referencia'] == data_base]
 
 
 # Datas de referência auxiliares
-data_ontem = df_filtrado['data_referencia'].max() - pd.Timedelta(days=1)
-data_ontem_2 = df_filtrado_2['data_referencia'].max() - pd.Timedelta(days=1)
+data_ontem = df_filtrado[df_filtrado['data_referencia'] <= df_filtrado['data_referencia'].max() - pd.Timedelta(days=1)]['data_referencia'].max()
+data_ontem_2 = df_filtrado_2[df_filtrado_2['data_referencia'] <= df_filtrado_2['data_referencia'].max() - pd.Timedelta(days=1)]['data_referencia'].max()
 inicio_mes = pd.to_datetime(data_base).replace(day=1)
 inicio_ano = pd.to_datetime(data_base).replace(month=1, day=1)
 
 datas_periodos = {
-    "dia": data_base - pd.Timedelta(days=1),
+    "dia": data_ontem,
     "mes": df_filtrado[(df_filtrado['data_referencia'] < inicio_mes)]['data_referencia'].max(),
     "ytd": df_filtrado[(df_filtrado['data_referencia'] < inicio_ano)]['data_referencia'].max(),
     "12m": df_filtrado[(df_filtrado['data_referencia'] <= data_base - pd.DateOffset(months=12))]['data_referencia'].max(),
