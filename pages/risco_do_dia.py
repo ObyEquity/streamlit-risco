@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import plotly.express as px
 from supabase_client import supabase  # seu cliente supabase configurado
 
-@st.cache_data
+@st.cache_data(ttl=60)
 def carregar_dados():
     try:
         response = supabase.table("risco_db_net_gross_fundos").select("*").execute()

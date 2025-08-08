@@ -11,8 +11,9 @@ import matplotlib.pyplot as plt
 import plotly.express as px
 from supabase_client import supabase  # seu cliente supabase configurado
 from datetime import datetime
+from funcoesAuxiliares import funcoes_auxiliares
 
-@st.cache_data
+@st.cache_data(ttl=60)
 def carregar_dados(tabela):
     try:
         response = supabase.table(tabela).select("*").execute()
@@ -44,20 +45,29 @@ df_cotas = df_cotas.sort_values('data_referencia').reset_index(drop = True)
 
 # Filtros
 ativos_disponiveis = df_cotas['ativo'].unique().tolist()
+ativos_default = ['LO1_FIC', 'LSH1_FIC', 'LSH2_FIC', 'CDI', 'IBOV']
 data_min = df_cotas['data_referencia'].min().date()
 data_max = df_cotas['data_referencia'].max().date()
 
-data_inicio, data_fim = st.slider(
-    "Selecione o intervalo de datas",
+# Seletor de intervalo de datas no calendário
+data_inicio = st.date_input(
+    "Data inicial",
+    value=data_min,
     min_value=data_min,
-    max_value=data_max,
-    value=(data_min, data_max)
+    max_value=data_max
+)
+
+data_fim = st.date_input(
+    "Data final",
+    value=data_max,
+    min_value=data_min,
+    max_value=data_max
 )
 
 ativos_selecionados = st.multiselect(
     "Selecione os ativos",
     options=ativos_disponiveis,
-    default=ativos_disponiveis
+    default=ativos_default
 )
 
 # Filtrando
@@ -111,6 +121,7 @@ data_base = st.date_input(
 
 # Filtrar até a data base
 data_base = pd.to_datetime(data_base)
+
 df_filtrado = df_fundos[df_fundos['data_referencia'] <= data_base].copy()
 df_filtrado_2 = df_cotas[df_cotas['data_referencia'] <= data_base].copy()
 cdi_add = df_filtrado_2[df_filtrado_2['ativo'] == 'CDI']
@@ -131,18 +142,29 @@ data_ontem_2 = df_filtrado_2[df_filtrado_2['data_referencia'] <= df_filtrado_2['
 inicio_mes = pd.to_datetime(data_base).replace(day=1)
 inicio_ano = pd.to_datetime(data_base).replace(month=1, day=1)
 
+# datas referencia de 12, 24 e 36M
+
+fa = funcoes_auxiliares(-1)
+d_12m = fa.pega_data_referencia(data_base - pd.DateOffset(months=12), 1)
+d_24m = fa.pega_data_referencia(data_base - pd.DateOffset(months=24), 1)
+d_36m = fa.pega_data_referencia(data_base - pd.DateOffset(months=36), 1)
+
 datas_periodos = {
     "dia": data_ontem,
     "mes": df_filtrado[(df_filtrado['data_referencia'] < inicio_mes)]['data_referencia'].max(),
     "ytd": df_filtrado[(df_filtrado['data_referencia'] < inicio_ano)]['data_referencia'].max(),
-    "12m": df_filtrado[(df_filtrado['data_referencia'] <= data_base - pd.DateOffset(months=12))]['data_referencia'].max(),
-    "24m": df_filtrado[(df_filtrado['data_referencia'] <= data_base - pd.DateOffset(months=24))]['data_referencia'].max(),
-    "36m": df_filtrado[(df_filtrado['data_referencia'] <= data_base - pd.DateOffset(months=36))]['data_referencia'].max(),
+    "12m": df_filtrado[(df_filtrado['data_referencia'] <= pd.to_datetime(d_12m))]['data_referencia'].max(),
+    "24m": df_filtrado[(df_filtrado['data_referencia'] <= pd.to_datetime(d_24m))]['data_referencia'].max(),
+    "36m": df_filtrado[(df_filtrado['data_referencia'] <= pd.to_datetime(d_36m))]['data_referencia'].max(),
     "inicio": df_filtrado.groupby('ativo')['data_referencia'].min(),
     "inicio CDI H1": df_filtrado[df_filtrado['ativo'] == 'LSH1_FIC']['data_referencia'].min(),
     "inicio CDI H2": df_filtrado[df_filtrado['ativo'] == 'LSH2_FIC']['data_referencia'].min(),
     "inicio IBOV": df_filtrado[df_filtrado['ativo'] == 'LO1_FIC']['data_referencia'].min(),
 }
+
+    # "12m": df_filtrado[(df_filtrado['data_referencia'] <= data_base - pd.DateOffset(months=12))]['data_referencia'].max(),
+    # "24m": df_filtrado[(df_filtrado['data_referencia'] <= data_base - pd.DateOffset(months=24))]['data_referencia'].max(),
+    # "36m": df_filtrado[(df_filtrado['data_referencia'] <= data_base - pd.DateOffset(months=36))]['data_referencia'].max(),
 
 # Função auxiliar para extrair cota de uma data específica
 def get_cota_em_data(df, data_ref_dict):
