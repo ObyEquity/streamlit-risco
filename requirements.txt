@@ -4,3 +4,6 @@ requests
 matplotlib
 plotly
 supabase
+math
+os
+json
