@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import plotly.express as px
 from supabase_client import supabase  # seu cliente supabase configurado
 from datetime import datetime
-from funcoesAuxiliares import funcoes_auxiliares
+from funcoesAuxiliaresSt import funcoes_auxiliares
 
 @st.cache_data(ttl=60)
 def carregar_dados(tabela):

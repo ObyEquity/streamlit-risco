@@ -8,7 +8,7 @@ class funcoes_auxiliares:
     def __init__(self, delta_dias:0):
         
         url = st.secrets["supabase"]["url"]
-	key = st.secrets["supabase"]["key"]
+        key = st.secrets["supabase"]["key"]
         self.supabase_client = create_client(url,key)
      
         
