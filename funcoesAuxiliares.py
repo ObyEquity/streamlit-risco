@@ -1,8 +1,6 @@
 import pandas as pd
-import json
 from supabase import create_client, Client
 import datetime
-import math
 import streamlit as st
 
 
@@ -103,37 +101,6 @@ class funcoes_auxiliares:
     
         return df
     
-    def upsert_data(self,
-                    df: pd.DataFrame(), 
-                    table: str = None, 
-                    schema_name: str = 'public', 
-                    nrows_df = 10000):
-        try:
-            """
-            Serializa um DataFrame em JSON, desserializa em um dicionário e atualiza uma tabela no Supabase.
-    
-            :param df: DataFrame pandas que será carregado no Supabase.
-            :param table_name: Nome da tabela no Supabase onde os dados serão inseridos/atualizados.
-            
-            Esta função converte um DataFrame pandas em uma lista de dicionários JSON,
-            e então utiliza a API do Supabase para inserir ou atualizar esses dados na tabela especificada.
-            """
-            
-            # Dividir o DataFrame em partes de 10 mil linhas
-            partes = [df.iloc[i:i + nrows_df] for i in range(0, len(df), nrows_df)]
-    
-            # Serializar e desserializar em JSON e subir para o supabase    
-            for parte in partes:
-                json_str = parte.to_json(orient='records')
-                json_str = json.loads(json_str)
-                self.supabase_client.postgrest.schema(schema_name).table(table).upsert(json_str).execute()
-            
-            print('Done')
-            return True
-        except Exception as e:
-            print(f'Erro ao atualizar dados no Supabase. {e}')        
-            return False
-
     def is_dia_util(self,data_referencia):
         df_data_feriado = self.fetch_data_from_supabase(table='db_feriados_nacionais')['data_referencia']
         feriados = pd.to_datetime(df_data_feriado).dt.date.tolist()
